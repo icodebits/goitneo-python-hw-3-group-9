@@ -117,42 +117,78 @@ class AddressBook(UserDict):
         
         return str.strip(output)
 
+class Bot:
+    def parse_input(self,user_input):
+        cmd, *args = user_input.split()
+        cmd = cmd.strip().lower()
+        return cmd, *args
+
+    def input_error(func):
+        def inner(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except ValueError:
+                return "Give me name and phone please."
+            except IndexError as e:
+                return "Give me the name please."
+
+        return inner
+
+    @input_error
+    def add_contact(self, args, contacts):
+        name, phone = args
+        contacts[name] = phone
+        return "Contact added."
+
+    @input_error
+    def change_contact(self, args, contacts):
+        name, new_phone = args
+        if contacts.get(name) != None:
+            contacts[name] = new_phone
+            return "Contact updated."
+        else:
+            return f'{name} not found.'
+
+    @input_error
+    def show_phone(self, args, contacts):
+        name = args[0]
+        if contacts.get(name) != None:
+            return contacts[name]
+        else:
+            return f'{name} not found.'
+
+    def show_all(self, contacts):
+        all_contacts = []
+        if contacts:
+            for name, phone_number in contacts.items():
+                all_contacts.append(f'{name}: {phone_number}')
+            return '\r\n'.join(all_contacts)
+        else:
+            return 'The contact list is empty'
+
+    def main(self):
+        contacts = {}
+        print("Welcome to the assistant bot!")
+        while True:
+            user_input = input("Enter a command: ")
+            command, *args = self.parse_input(user_input)
+
+            if command in ["close", "exit"]:
+                print("Good bye!")
+                break
+            elif command == "hello":
+                print("How can I help you?")
+            elif command == "add":
+                print(self.add_contact(args, contacts))
+            elif command == "change":
+                print(self.change_contact(args, contacts))
+            elif command == "phone":
+                print(self.show_phone(args, contacts))
+            elif command == "all":
+                print(self.show_all(contacts))
+            else:
+                print("Invalid command.")
+
 if __name__ == "__main__":
-    # Створення нової адресної книги
-    book = AddressBook()
-
-    # Створення запису для John
-    john_record = Record("John")
-    john_record.add_phone("1234567890")
-    john_record.add_phone("5555555555")
-    john_record.add_birthday("27.10.1990")
-
-    # Додавання запису John до адресної книги
-    book.add_record(john_record)
-
-    # Створення та додавання нового запису для Jane
-    jane_record = Record("Jane")
-    jane_record.add_phone("9876543210")
-    jane_record.add_birthday("29.10.1985")
-    book.add_record(jane_record)
-
-    # Виведення всіх записів у книзі
-    for name, record in book.data.items():
-        print(record)
-
-    print(book.get_birthdays_per_week())
-
-    # Знаходження та редагування телефону для John
-    john = book.find("John")
-    if john:    # Перевірка запису до редагування
-        john.edit_phone("1234567890", "1112223333")
-
-    print(john) # Виведення: Contact name: John, phones: 1112223333; 5555555555
-
-    # Пошук конкретного телефону у записі John
-    found_phone = john.find_phone("5555555555")
-    if found_phone: # Перевірка запису до виведення
-        print(f"{john.name}: {found_phone}")  # Виведення: John: 5555555555
-    
-    # Видалення запису Jane
-    book.delete("Jane")
+    bot = Bot()
+    bot.main()
