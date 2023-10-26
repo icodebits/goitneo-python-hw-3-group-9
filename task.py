@@ -137,7 +137,13 @@ class Bot:
     @input_error
     def add_contact(self, args, contacts):
         name, phone = args
-        contacts[name] = phone
+        record = Record(name)
+        # To elaborate correct Phone length wrap it in try-except and return its error
+        try:
+            record.add_phone(phone)
+        except ValueError as e:
+            return e
+        contacts.add_record(record)
         return "Contact added."
 
     @input_error
@@ -167,7 +173,7 @@ class Bot:
             return 'The contact list is empty'
 
     def main(self):
-        contacts = {}
+        book = AddressBook()
         print("Welcome to the assistant bot!")
         while True:
             user_input = input("Enter a command: ")
@@ -179,13 +185,13 @@ class Bot:
             elif command == "hello":
                 print("How can I help you?")
             elif command == "add":
-                print(self.add_contact(args, contacts))
+                print(self.add_contact(args, book))
             elif command == "change":
-                print(self.change_contact(args, contacts))
+                print(self.change_contact(args, book))
             elif command == "phone":
-                print(self.show_phone(args, contacts))
+                print(self.show_phone(args, book))
             elif command == "all":
-                print(self.show_all(contacts))
+                print(self.show_all(book))
             else:
                 print("Invalid command.")
 
