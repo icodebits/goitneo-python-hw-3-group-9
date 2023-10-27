@@ -136,38 +136,58 @@ class Bot:
 
     @input_error
     def add_contact(self, args, contacts):
+        record_found = None
         name, phone = args
-        record = Record(name)
+        # Check if contact exists
+        record = contacts.find(name)
+        if record:                      # Contact exists
+            record_found = True
+        else:                           # No contact found with this name, should create new one
+            record_found = False
+            record = Record(name)
+            
         # To elaborate correct Phone length wrap it in try-except and return its error
         try:
             record.add_phone(phone)
         except ValueError as e:
             return e
-        contacts.add_record(record)
-        return "Contact added."
 
+        # If contact was not found, should add it to the contacts, otherwise its already updated
+        if not record_found:
+            contacts.add_record(record)
+            return "Contact added."
+        else:
+            return "Contact added new phone."
+        
     @input_error
     def change_contact(self, args, contacts):
-        name, new_phone = args
-        if contacts.get(name) != None:
-            contacts[name] = new_phone
-            return "Contact updated."
+        name, old_phone, new_phone = args
+        record = contacts.find(name)
+        # Check if contact exists
+        if record:
+            # To elaborate correct Phone length wrap it in try-except and return its error
+            try:
+                record.edit_phone(old_phone, new_phone)
+                return "Contact updated."
+            except ValueError as e:
+                return e
         else:
             return f'{name} not found.'
 
     @input_error
     def show_phone(self, args, contacts):
         name = args[0]
-        if contacts.get(name) != None:
-            return contacts[name]
+        record = contacts.find(name)
+        if record != None:
+            return '; '.join(str(p) for p in record.phones)
         else:
             return f'{name} not found.'
 
     def show_all(self, contacts):
         all_contacts = []
         if contacts:
-            for name, phone_number in contacts.items():
-                all_contacts.append(f'{name}: {phone_number}')
+            for name, record in contacts.data.items():
+                all_contacts.append(f'{record}')
             return '\r\n'.join(all_contacts)
         else:
             return 'The contact list is empty'
