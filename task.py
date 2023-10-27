@@ -82,7 +82,7 @@ class AddressBook(UserDict):
             del self.data[name]
     
     def get_birthdays_per_week(self):
-        output = ''
+        output = []
         # Prepare data
         today = datetime.today().date()
         next_week = today + timedelta(days=7)
@@ -90,7 +90,6 @@ class AddressBook(UserDict):
 
         # Cycle through users
         for user in self.data.values():
-            print(user)
             name = user.name.value
             birthday = datetime.strptime(user.birthday.value, '%d.%m.%Y').date()
             birthday_this_year = birthday.replace(year=today.year)
@@ -113,9 +112,9 @@ class AddressBook(UserDict):
 
         # Result Output
         for day, names in birthday_dict.items():
-            output = output + f"{day}: {', '.join(names)}" + '\r\n'
+            output.append(f"{day}: {', '.join(names)}")
         
-        return str.strip(output)
+        return '\r\n'.join(output)
 
 class Bot:
     def parse_input(self,user_input):
@@ -131,6 +130,15 @@ class Bot:
                 return "Give me name and phone please."
             except IndexError as e:
                 return "Give me the name please."
+
+        return inner
+    
+    def input_error_bday(func):
+        def inner(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except ValueError:
+                return "Give me the name and birthday please."
 
         return inner
 
@@ -192,6 +200,37 @@ class Bot:
         else:
             return 'The contact list is empty'
 
+    @input_error_bday
+    def add_birthday(self, args, contacts):
+        name, birthday = args
+        # Check if contact exists
+        record = contacts.find(name)
+        if record:
+            # To elaborate correct Birthday format wrap it in try-except and return its error
+            try:
+                record.add_birthday(birthday)
+            except ValueError as e:
+                return e
+            return "Birthday added."
+        else:
+            return f'{name} not found.'
+
+    @input_error
+    def show_birthday(self, args, contacts):
+        name = args[0]
+        # Check if contact exists
+        record = contacts.find(name)
+        if record != None:
+            return record.birthday
+        else:
+            return f'{name} not found.'
+    
+    def get_birthdays(self, contacts):
+        if contacts:
+            return contacts.get_birthdays_per_week()
+        else:
+            return 'The contact list is empty'
+
     def main(self):
         book = AddressBook()
         print("Welcome to the assistant bot!")
@@ -212,6 +251,12 @@ class Bot:
                 print(self.show_phone(args, book))
             elif command == "all":
                 print(self.show_all(book))
+            elif command == "add-birthday":
+                print(self.add_birthday(args, book))
+            elif command == "show-birthday":
+                print(self.show_birthday(args, book))
+            elif command == "birthdays":
+                print(self.get_birthdays(book))
             else:
                 print("Invalid command.")
 
